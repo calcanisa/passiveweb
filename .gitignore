@@ -1,0 +1,10 @@
+/*
+!/.gitignore
+!/README.md
+!/themes/
+/themes/*
+!/themes/passiveweb/
+!/plugins/
+/plugins/*
+!/plugins/passiveweb-core/
+.DS_Store
