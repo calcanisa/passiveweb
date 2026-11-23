@@ -2947,3 +2947,66 @@ textarea {
     animation: none !important;
   }
 }
+
+.pw-hero--page {
+  min-height: 88vh;
+  min-height: 88svh;
+}
+
+.pw-training__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+}
+
+.pw-card__more {
+  position: relative;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 22px;
+  color: var(--a1);
+  font-weight: 600;
+  font-size: .95rem;
+  transition: gap .3s var(--ease), color .3s;
+}
+
+.pw-card__more .pw-icon {
+  width: 16px;
+  height: 16px;
+}
+
+.pw-card__more:hover,
+.pw-card__more:focus-visible {
+  gap: 12px;
+  color: var(--text);
+}
+
+a.pw-audience__card {
+  color: inherit;
+  text-decoration: none;
+}
+
+a.pw-audience__card:focus-visible {
+  outline: 2px solid var(--a1);
+  outline-offset: 4px;
+}
+
+.pw-footer__heading {
+  margin: 0 0 14px;
+  color: var(--text);
+  font-family: var(--font-h), sans-serif;
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+@media (min-width: 961px) {
+  .pw-footer__grid--services {
+    grid-template-columns: minmax(0, 1.3fr) minmax(0, .7fr) minmax(0, .9fr) minmax(0, 1fr);
+  }
+}
+
+.pw-head--top {
+  align-items: start;
+}

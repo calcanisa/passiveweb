@@ -6,15 +6,18 @@ $pw_email = sanitize_email(pw_mod('contact_email'));
 $pw_phone = pw_text('contact_phone');
 $pw_wa = preg_replace('/[^0-9]/', '', (string) pw_mod('contact_whatsapp'));
 $pw_socials = pw_socials();
+$pw_args = isset($args) && is_array($args) ? $args : array();
+$pw_title_key = isset($pw_args['title_key']) && is_string($pw_args['title_key']) && '' !== pw_text($pw_args['title_key']) ? $pw_args['title_key'] : 'contact_title';
+$pw_text_key = isset($pw_args['text_key']) && is_string($pw_args['text_key']) && '' !== pw_text($pw_args['text_key']) ? $pw_args['text_key'] : 'contact_text';
 ?>
 <section class="pw-section pw-section--dark pw-contact" id="contact">
     <div class="pw-contact__glow" aria-hidden="true"></div>
     <div class="pw-container pw-contact__grid">
         <div class="pw-contact__copy">
             <?php pw_eyebrow('contact_eyebrow'); ?>
-            <?php pw_heading(pw_text('contact_title')); ?>
-            <?php if ('' !== pw_text('contact_text')) : ?>
-                <div class="pw-head__text" data-reveal><?php echo pw_paragraphs('contact_text'); ?></div>
+            <?php pw_heading(pw_text($pw_title_key)); ?>
+            <?php if ('' !== pw_text($pw_text_key)) : ?>
+                <div class="pw-head__text" data-reveal><?php echo pw_paragraphs($pw_text_key); ?></div>
             <?php endif; ?>
             <ul class="pw-contact__list" data-stagger>
                 <?php if ('' !== $pw_email) : ?>

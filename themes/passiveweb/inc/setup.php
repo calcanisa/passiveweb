@@ -74,7 +74,7 @@ function pw_enqueue()
         wp_dequeue_style('wp-block-library');
         wp_dequeue_style('wp-block-library-theme');
         wp_dequeue_style('classic-theme-styles');
-        if (is_front_page()) {
+        if (is_front_page() || '' !== pw_current_service()) {
             wp_dequeue_style('global-styles');
         }
     }
@@ -106,7 +106,9 @@ function pw_body_classes($classes)
             $classes[] = 'pw-fx-' . $class;
         }
     }
-    if (!is_front_page()) {
+    if ('' !== pw_current_service()) {
+        $classes[] = 'pw-service';
+    } elseif (!is_front_page()) {
         $classes[] = 'pw-inner';
     }
     return $classes;

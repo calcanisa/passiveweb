@@ -4,6 +4,7 @@ if (!defined('ABSPATH')) {
 }
 $pw_nav = pw_nav_items();
 $pw_socials = pw_socials();
+$pw_services = '' !== pw_text('footer_services_title') ? pw_service_links() : array();
 ?>
 </main>
 <footer class="pw-footer">
@@ -11,7 +12,7 @@ $pw_socials = pw_socials();
         <?php if ('' !== pw_text('footer_big')) : ?>
             <p class="pw-footer__big" aria-hidden="true" data-spot><?php pw_e('footer_big'); ?></p>
         <?php endif; ?>
-        <div class="pw-footer__grid">
+        <div class="pw-footer__grid<?php echo !empty($pw_services) ? ' pw-footer__grid--services' : ''; ?>">
             <div class="pw-footer__brand">
                 <a class="pw-brand" href="<?php echo esc_url(home_url('/')); ?>">
                     <?php echo pw_mark('pw-brand__mark'); ?>
@@ -31,6 +32,19 @@ $pw_socials = pw_socials();
                     <ul>
                         <?php foreach ($pw_nav as $pw_item) : ?>
                             <li><a href="<?php echo esc_url(pw_link('#' . $pw_item['id'])); ?>"><?php echo esc_html($pw_item['label']); ?></a></li>
+                        <?php endforeach; ?>
+                    </ul>
+                </nav>
+            <?php endif; ?>
+            <?php if (!empty($pw_services)) : ?>
+                <nav class="pw-footer__nav" aria-label="<?php echo esc_attr(pw_text('footer_services_title')); ?>">
+                    <p class="pw-footer__heading"><?php pw_e('footer_services_title'); ?></p>
+                    <ul>
+                        <?php if ('' !== pw_text('footer_home_service')) : ?>
+                            <li><a href="<?php echo esc_url(home_url('/')); ?>"><?php pw_e('footer_home_service'); ?></a></li>
+                        <?php endif; ?>
+                        <?php foreach ($pw_services as $pw_service) : ?>
+                            <li><a href="<?php echo esc_url($pw_service['url']); ?>"><?php echo esc_html($pw_service['label']); ?></a></li>
                         <?php endforeach; ?>
                     </ul>
                 </nav>

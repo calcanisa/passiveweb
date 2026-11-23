@@ -49,6 +49,9 @@ if (2 === $pw_cells % 3) {
                                 <?php endforeach; ?>
                             </ul>
                         <?php endif; ?>
+                        <?php if ('' !== $pw_item['url'] && '' !== $pw_item['more']) : ?>
+                            <a class="pw-card__more" href="<?php echo esc_url($pw_item['url']); ?>"><?php echo esc_html($pw_item['more']); ?><span aria-hidden="true"><?php echo pw_icon('arrow'); ?></span></a>
+                        <?php endif; ?>
                     </article>
                 <?php endforeach; ?>
             </div>

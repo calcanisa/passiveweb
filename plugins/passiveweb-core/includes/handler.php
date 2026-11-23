@@ -221,7 +221,20 @@ function pwc_admin_post()
     $result = pwc_process_submission(is_array($raw) ? $raw : array());
     $allowed = array('sent', 'limit', 'expired', 'invalid', 'error', 'fast');
     $code = in_array($result['code'], $allowed, true) ? $result['code'] : 'error';
-    wp_safe_redirect(add_query_arg('pwc', $code, home_url('/')) . '#contact', 303);
+    $home = home_url('/');
+    $page = isset($raw['pwc_page']) && is_string($raw['pwc_page']) ? esc_url_raw(substr($raw['pwc_page'], 0, 500)) : '';
+    if ('' === $page) {
+        $referer = wp_get_raw_referer();
+        $page = $referer ? esc_url_raw(substr((string) $referer, 0, 500)) : '';
+    }
+    $target = wp_validate_redirect($page, $home);
+    $parts = wp_parse_url($target);
+    if (!is_array($parts) || empty($parts['host']) || wp_parse_url($home, PHP_URL_HOST) !== $parts['host']) {
+        $target = $home;
+    } else {
+        $target = (isset($parts['scheme']) ? $parts['scheme'] : 'https') . '://' . $parts['host'] . (isset($parts['port']) ? ':' . (int) $parts['port'] : '') . (isset($parts['path']) ? $parts['path'] : '/');
+    }
+    wp_safe_redirect(add_query_arg('pwc', $code, $target) . '#contact', 303);
     exit;
 }
 add_action('admin_post_nopriv_pwc_quote', 'pwc_admin_post');

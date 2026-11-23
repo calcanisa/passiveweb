@@ -63,8 +63,12 @@ function pw_link($value)
         return '#';
     }
     if (0 === strpos($value, '#')) {
-        $anchor = '#' . preg_replace('/[^A-Za-z0-9_-]/', '', substr($value, 1));
-        return is_front_page() ? $anchor : home_url('/') . $anchor;
+        $id = preg_replace('/[^A-Za-z0-9_-]/', '', substr($value, 1));
+        $anchor = '#' . $id;
+        if (is_front_page() || in_array($id, pw_local_anchors(), true)) {
+            return $anchor;
+        }
+        return home_url('/') . $anchor;
     }
     return esc_url($value);
 }

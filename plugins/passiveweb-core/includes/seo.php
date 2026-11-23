@@ -19,10 +19,49 @@ function pwc_handles_meta()
     return true;
 }
 
+function pwc_page_seo()
+{
+    static $cache = null;
+    if (null !== $cache) {
+        return $cache ? $cache : null;
+    }
+    $cache = false;
+    if (is_front_page() || !is_singular()) {
+        return null;
+    }
+    $seo = apply_filters('pwc_page_seo', null);
+    if (!is_array($seo) || empty($seo['url'])) {
+        return null;
+    }
+    $url = esc_url_raw((string) $seo['url']);
+    $home = wp_parse_url(home_url(), PHP_URL_HOST);
+    if ('' === $url || wp_parse_url($url, PHP_URL_HOST) !== $home) {
+        return null;
+    }
+    $clean = array(
+        'url' => $url,
+        'title' => isset($seo['title']) ? sanitize_text_field((string) $seo['title']) : '',
+        'description' => isset($seo['description']) ? sanitize_text_field((string) $seo['description']) : '',
+        'heading' => isset($seo['heading']) ? sanitize_text_field((string) $seo['heading']) : '',
+        'service' => isset($seo['service']) && is_array($seo['service']) ? $seo['service'] : array(),
+        'faqs' => isset($seo['faqs']) && is_array($seo['faqs']) ? $seo['faqs'] : array(),
+        'breadcrumbs' => isset($seo['breadcrumbs']) && is_array($seo['breadcrumbs']) ? $seo['breadcrumbs'] : array(),
+    );
+    $cache = $clean;
+    return $clean;
+}
+
 function pwc_document_title($title)
 {
-    if (is_front_page() && pwc_handles_meta() && '' !== pwc_text('seo_title')) {
+    if (!pwc_handles_meta()) {
+        return $title;
+    }
+    if (is_front_page() && '' !== pwc_text('seo_title')) {
         return pwc_text('seo_title');
+    }
+    $page = pwc_page_seo();
+    if ($page && '' !== $page['title']) {
+        return $page['title'];
     }
     return $title;
 }
@@ -54,24 +93,14 @@ function pwc_logo_url()
     return $icon ? $icon : '';
 }
 
-function pwc_head_meta()
+function pwc_meta_tags($title, $desc, $url)
 {
-    if (!is_front_page() || !pwc_handles_meta()) {
-        return;
-    }
-    $title = pwc_text('seo_title');
-    if ('' === $title) {
-        $title = wp_get_document_title();
-    }
-    $desc = pwc_text('seo_description');
-    $url = home_url('/');
     $image = esc_url(pwc_opt('seo_image'));
     $name = pwc_text('biz_name');
 
     if ('' !== $desc) {
         echo '<meta name="description" content="' . esc_attr($desc) . '">' . "\n";
     }
-    echo '<link rel="canonical" href="' . esc_url($url) . '">' . "\n";
     echo '<meta property="og:type" content="website">' . "\n";
     echo '<meta property="og:locale" content="en_ZA">' . "\n";
     echo '<meta property="og:site_name" content="' . esc_attr('' !== $name ? $name : get_bloginfo('name')) . '">' . "\n";
@@ -104,6 +133,29 @@ function pwc_head_meta()
         echo '<meta name="ICBM" content="' . esc_attr(pwc_text('biz_lat') . ', ' . pwc_text('biz_lng')) . '">' . "\n";
     }
 }
+
+function pwc_head_meta()
+{
+    if (!pwc_handles_meta()) {
+        return;
+    }
+    if (is_front_page()) {
+        $title = pwc_text('seo_title');
+        if ('' === $title) {
+            $title = wp_get_document_title();
+        }
+        $url = home_url('/');
+        echo '<link rel="canonical" href="' . esc_url($url) . '">' . "\n";
+        pwc_meta_tags($title, pwc_text('seo_description'), $url);
+        return;
+    }
+    $page = pwc_page_seo();
+    if (!$page) {
+        return;
+    }
+    $title = '' !== $page['title'] ? $page['title'] : wp_get_document_title();
+    pwc_meta_tags($title, $page['description'], $page['url']);
+}
 add_action('wp_head', 'pwc_head_meta', 1);
 
 function pwc_remove_core_canonical()
@@ -114,11 +166,25 @@ function pwc_remove_core_canonical()
 }
 add_action('template_redirect', 'pwc_remove_core_canonical');
 
-function pwc_schema()
+function pwc_areas_served()
 {
-    if (!is_front_page() || !pwc_opt('seo_enable')) {
-        return;
+    $provinces = array('Gauteng', 'Western Cape', 'KwaZulu-Natal', 'Eastern Cape', 'Free State', 'Limpopo', 'Mpumalanga', 'North West', 'Northern Cape');
+    $areas = array();
+    foreach (pwc_lines('biz_areas') as $area) {
+        if ('South Africa' === $area) {
+            $place_type = 'Country';
+        } elseif (in_array($area, $provinces, true)) {
+            $place_type = 'State';
+        } else {
+            $place_type = 'City';
+        }
+        $areas[] = array('@type' => $place_type, 'name' => $area);
     }
+    return $areas;
+}
+
+function pwc_business_node()
+{
     $home = home_url('/');
     $contact = pwc_business_contact();
     $logo = pwc_logo_url();
@@ -177,18 +243,7 @@ function pwc_schema()
         );
     }
 
-    $areas = array();
-    foreach (pwc_lines('biz_areas') as $area) {
-        $place_type = 'Place';
-        if (in_array($area, array('South Africa'), true)) {
-            $place_type = 'Country';
-        } elseif (in_array($area, array('Gauteng', 'Western Cape', 'KwaZulu-Natal', 'Eastern Cape', 'Free State', 'Limpopo', 'Mpumalanga', 'North West', 'Northern Cape'), true)) {
-            $place_type = 'State';
-        } else {
-            $place_type = 'City';
-        }
-        $areas[] = array('@type' => $place_type, 'name' => $area);
-    }
+    $areas = pwc_areas_served();
     if (!empty($areas)) {
         $business['areaServed'] = $areas;
     }
@@ -207,20 +262,72 @@ function pwc_schema()
         $business['sameAs'] = array_values(array_unique($same));
     }
 
+    return $business;
+}
+
+function pwc_faq_node($faqs, $id, $page_id)
+{
+    $entities = array();
+    foreach ((array) $faqs as $faq) {
+        if (!is_array($faq) || empty($faq['question']) || empty($faq['answer'])) {
+            continue;
+        }
+        $entities[] = array(
+            '@type' => 'Question',
+            'name' => wp_strip_all_tags((string) $faq['question']),
+            'acceptedAnswer' => array('@type' => 'Answer', 'text' => wp_strip_all_tags((string) $faq['answer'])),
+        );
+    }
+    if (empty($entities)) {
+        return null;
+    }
+    return array(
+        '@type' => 'FAQPage',
+        '@id' => $id,
+        'isPartOf' => array('@id' => $page_id),
+        'mainEntity' => $entities,
+    );
+}
+
+function pwc_website_node($name)
+{
+    $home = home_url('/');
+    return array(
+        '@type' => 'WebSite',
+        '@id' => $home . '#website',
+        'url' => $home,
+        'name' => $name,
+        'inLanguage' => 'en-ZA',
+        'publisher' => array('@id' => $home . '#business'),
+    );
+}
+
+function pwc_front_graph()
+{
+    $home = home_url('/');
+    $business = pwc_business_node();
+    $areas = isset($business['areaServed']) ? $business['areaServed'] : array();
+
     $services = (array) apply_filters('pwc_services', array());
     if (!empty($services)) {
         $offers = array();
         foreach ($services as $svc) {
-            if (empty($svc['name'])) {
+            if (!is_array($svc) || empty($svc['name'])) {
                 continue;
             }
             $item = array(
                 '@type' => 'Service',
-                'name' => wp_strip_all_tags($svc['name']),
+                'name' => wp_strip_all_tags((string) $svc['name']),
                 'provider' => array('@id' => $home . '#business'),
             );
             if (!empty($svc['description'])) {
-                $item['description'] = wp_strip_all_tags($svc['description']);
+                $item['description'] = wp_strip_all_tags((string) $svc['description']);
+            }
+            if (!empty($svc['url'])) {
+                $svc_url = esc_url_raw((string) $svc['url']);
+                if ('' !== $svc_url) {
+                    $item['url'] = $svc_url;
+                }
             }
             if (!empty($areas)) {
                 $item['areaServed'] = $areas;
@@ -236,15 +343,7 @@ function pwc_schema()
         }
     }
 
-    $graph = array($business);
-    $graph[] = array(
-        '@type' => 'WebSite',
-        '@id' => $home . '#website',
-        'url' => $home,
-        'name' => $business['name'],
-        'inLanguage' => 'en-ZA',
-        'publisher' => array('@id' => $home . '#business'),
-    );
+    $graph = array($business, pwc_website_node($business['name']));
     $graph[] = array(
         '@type' => 'WebPage',
         '@id' => $home . '#webpage',
@@ -254,28 +353,123 @@ function pwc_schema()
         'about' => array('@id' => $home . '#business'),
         'inLanguage' => 'en-ZA',
     );
+    $faq = pwc_faq_node(apply_filters('pwc_faq_items', array()), $home . '#faq', $home . '#webpage');
+    if ($faq) {
+        $graph[] = $faq;
+    }
+    return $graph;
+}
 
-    $faqs = (array) apply_filters('pwc_faq_items', array());
-    $entities = array();
-    foreach ($faqs as $faq) {
-        if (empty($faq['question']) || empty($faq['answer'])) {
+function pwc_page_graph($page)
+{
+    $home = home_url('/');
+    $url = $page['url'];
+    $business = pwc_business_node();
+    $areas = isset($business['areaServed']) ? $business['areaServed'] : array();
+    $graph = array($business, pwc_website_node($business['name']));
+
+    $webpage = array(
+        '@type' => 'WebPage',
+        '@id' => $url . '#webpage',
+        'url' => $url,
+        'name' => '' !== $page['title'] ? $page['title'] : get_the_title(),
+        'isPartOf' => array('@id' => $home . '#website'),
+        'about' => array('@id' => $home . '#business'),
+        'inLanguage' => 'en-ZA',
+    );
+    if ('' !== $page['description']) {
+        $webpage['description'] = $page['description'];
+    }
+
+    $crumbs = array();
+    $position = 1;
+    foreach ($page['breadcrumbs'] as $crumb) {
+        if (!is_array($crumb) || empty($crumb['name']) || empty($crumb['url'])) {
             continue;
         }
-        $entities[] = array(
-            '@type' => 'Question',
-            'name' => wp_strip_all_tags($faq['question']),
-            'acceptedAnswer' => array('@type' => 'Answer', 'text' => wp_strip_all_tags($faq['answer'])),
+        $crumbs[] = array(
+            '@type' => 'ListItem',
+            'position' => $position++,
+            'name' => wp_strip_all_tags((string) $crumb['name']),
+            'item' => esc_url_raw((string) $crumb['url']),
         );
     }
-    if (!empty($entities)) {
+    if (count($crumbs) > 1) {
+        $webpage['breadcrumb'] = array('@id' => $url . '#breadcrumb');
+    }
+
+    $service = $page['service'];
+    if (!empty($service['name'])) {
+        $node = array(
+            '@type' => 'Service',
+            '@id' => $url . '#service',
+            'name' => wp_strip_all_tags((string) $service['name']),
+            'url' => $url,
+            'provider' => array('@id' => $home . '#business'),
+        );
+        if (!empty($service['type'])) {
+            $node['serviceType'] = wp_strip_all_tags((string) $service['type']);
+        }
+        if (!empty($service['description'])) {
+            $node['description'] = wp_strip_all_tags((string) $service['description']);
+        }
+        if (!empty($areas)) {
+            $node['areaServed'] = $areas;
+        }
+        $offers = array();
+        foreach (isset($service['features']) ? (array) $service['features'] : array() as $feature) {
+            if (!is_array($feature) || empty($feature['name'])) {
+                continue;
+            }
+            $item = array('@type' => 'Service', 'name' => wp_strip_all_tags((string) $feature['name']));
+            if (!empty($feature['description'])) {
+                $item['description'] = wp_strip_all_tags((string) $feature['description']);
+            }
+            $offers[] = array('@type' => 'Offer', 'itemOffered' => $item);
+        }
+        if (!empty($offers)) {
+            $node['hasOfferCatalog'] = array(
+                '@type' => 'OfferCatalog',
+                'name' => wp_strip_all_tags((string) $service['name']),
+                'itemListElement' => $offers,
+            );
+        }
+        $webpage['mainEntity'] = array('@id' => $url . '#service');
+        $graph[] = $webpage;
+        $graph[] = $node;
+    } else {
+        $graph[] = $webpage;
+    }
+
+    if (count($crumbs) > 1) {
         $graph[] = array(
-            '@type' => 'FAQPage',
-            '@id' => $home . '#faq',
-            'isPartOf' => array('@id' => $home . '#webpage'),
-            'mainEntity' => $entities,
+            '@type' => 'BreadcrumbList',
+            '@id' => $url . '#breadcrumb',
+            'itemListElement' => $crumbs,
         );
     }
 
+    $faq = pwc_faq_node($page['faqs'], $url . '#faq', $url . '#webpage');
+    if ($faq) {
+        $graph[] = $faq;
+    }
+    return $graph;
+}
+
+function pwc_schema()
+{
+    if (!pwc_opt('seo_enable')) {
+        return;
+    }
+    if (is_front_page()) {
+        $graph = pwc_front_graph();
+    } else {
+        $page = pwc_page_seo();
+        if (!$page) {
+            return;
+        }
+        $graph = pwc_page_graph($page);
+    }
     $json = wp_json_encode(array('@context' => 'https://schema.org', '@graph' => $graph), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP);
     if ($json) {
         echo '<script type="application/ld+json">' . $json . '</script>' . "\n";

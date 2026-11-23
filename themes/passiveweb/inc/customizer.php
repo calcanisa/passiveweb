@@ -93,6 +93,8 @@ function pw_sanitizer_for($key, $type)
             return 'esc_url_raw';
         case 'email':
             return 'sanitize_email';
+        case 'page':
+            return 'absint';
         default:
             return 'sanitize_text_field';
     }
@@ -105,13 +107,18 @@ function pw_customize_register($wp_customize)
         'description' => 'Edit every part of the one page website.',
         'priority' => 20,
     ));
+    $wp_customize->add_panel('pw_sp_panel', array(
+        'title' => 'Passive Web Service Pages',
+        'description' => 'Edit the mobile apps, AI training and web hosting pages. Open a service page in the preview to see your changes.',
+        'priority' => 21,
+    ));
 
     $priority = 10;
     foreach (pw_fields() as $section_id => $section) {
         $wp_customize->add_section($section_id, array(
             'title' => $section['title'],
             'description' => isset($section['description']) ? $section['description'] : '',
-            'panel' => 'pw_panel',
+            'panel' => isset($section['panel']) ? $section['panel'] : 'pw_panel',
             'priority' => $priority,
         ));
         $priority += 5;
@@ -144,7 +151,7 @@ function pw_customize_register($wp_customize)
                 continue;
             }
 
-            $args['type'] = $def['type'];
+            $args['type'] = 'page' === $def['type'] ? 'dropdown-pages' : $def['type'];
             if ('select' === $def['type']) {
                 $args['choices'] = $def['choices'];
             }

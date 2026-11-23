@@ -1,18 +1,20 @@
 <?php
-defined( 'ABSPATH' ) || exit;
-
+if (!defined('ABSPATH')) {
+    exit;
+}
 get_header();
-
-while ( have_posts() ) :
-	the_post();
-	?>
-	<section class="pw-section pw-section--intro">
-		<div class="pw-wrap pw-stack pw-stack--sm">
-			<h1 class="pw-h1"><?php the_title(); ?></h1>
-			<div class="pw-prose"><?php the_content(); ?></div>
-		</div>
-	</section>
-	<?php
-endwhile;
-
+?>
+<section class="pw-page pw-section--light">
+    <div class="pw-container pw-container--narrow">
+        <?php while (have_posts()) : the_post(); ?>
+            <article id="post-<?php the_ID(); ?>" <?php post_class('pw-article'); ?>>
+                <h1 class="pw-page__title"><?php the_title(); ?></h1>
+                <div class="pw-prose">
+                    <?php the_content(); ?>
+                </div>
+            </article>
+        <?php endwhile; ?>
+    </div>
+</section>
+<?php
 get_footer();

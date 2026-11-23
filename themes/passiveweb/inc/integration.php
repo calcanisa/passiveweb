@@ -20,6 +20,8 @@ function pw_service_items()
             'title' => $title,
             'text' => pw_text("svc_{$n}_text"),
             'tags' => pw_tags("svc_{$n}_tags"),
+            'url' => pw_service_url((string) pw_mod("svc_{$n}_page")),
+            'more' => pw_text("svc_{$n}_more"),
         );
     }
     return $items;
@@ -43,9 +45,49 @@ add_filter('pwc_services', function ($services) {
         return $services;
     }
     foreach (pw_service_items() as $item) {
-        $services[] = array('name' => $item['title'], 'description' => $item['text']);
+        $services[] = array('name' => $item['title'], 'description' => $item['text'], 'url' => $item['url']);
+    }
+    $listed = wp_list_pluck($services, 'url');
+    foreach (pw_service_links() as $link) {
+        if (!in_array($link['url'], $listed, true)) {
+            $services[] = array('name' => $link['label'], 'description' => $link['text'], 'url' => $link['url']);
+        }
     }
     return $services;
+});
+
+add_filter('pwc_page_seo', function ($seo) {
+    $key = pw_current_service();
+    if ('' === $key) {
+        return $seo;
+    }
+    $url = pw_service_url($key);
+    $faqs = array();
+    foreach (pw_service_faqs($key) as $item) {
+        $faqs[] = array('question' => $item['q'], 'answer' => $item['a']);
+    }
+    $features = array();
+    foreach (pw_service_features($key) as $item) {
+        $features[] = array('name' => $item['title'], 'description' => $item['text']);
+    }
+    $name = pw_sp_text($key, 'menu_label');
+    return array(
+        'url' => $url,
+        'title' => pw_sp_text($key, 'seo_title'),
+        'description' => pw_sp_text($key, 'seo_desc'),
+        'heading' => pw_sp_text($key, 'hero_kicker'),
+        'service' => array(
+            'name' => '' !== pw_sp_text($key, 'hero_kicker') ? pw_sp_text($key, 'hero_kicker') : $name,
+            'type' => $name,
+            'description' => pw_sp_text($key, 'seo_desc'),
+            'features' => $features,
+        ),
+        'faqs' => $faqs,
+        'breadcrumbs' => array(
+            array('name' => pw_text('logo_text'), 'url' => home_url('/')),
+            array('name' => '' !== pw_sp_text($key, 'hero_kicker') ? pw_sp_text($key, 'hero_kicker') : $name, 'url' => $url),
+        ),
+    );
 });
 
 add_filter('pwc_faq_items', function ($items) {

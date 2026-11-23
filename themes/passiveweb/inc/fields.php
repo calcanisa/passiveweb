@@ -205,6 +205,8 @@ function pw_fields()
         array('cpu', '', '', ''),
         array('spark', '', '', ''),
     );
+    $svc_pages = array(4 => array('apps', 'Mobile app development in Pretoria'), 6 => array('hosting', 'Web hosting in Pretoria'));
+    $page_choices = pw_service_choices();
     foreach ($svc as $i => $s) {
         $n = $i + 1;
         $services["svc_{$n}_enable"] = pw_f('checkbox', "Service {$n}: show", '' !== $s[1]);
@@ -212,6 +214,8 @@ function pw_fields()
         $services["svc_{$n}_title"] = pw_f('text', "Service {$n}: title", $s[1]);
         $services["svc_{$n}_text"] = pw_f('textarea', "Service {$n}: text", $s[2]);
         $services["svc_{$n}_tags"] = pw_f('text', "Service {$n}: tags (comma separated)", $s[3]);
+        $services["svc_{$n}_page"] = pw_f('select', "Service {$n}: link to a service page", isset($svc_pages[$n]) ? $svc_pages[$n][0] : '', array('choices' => $page_choices));
+        $services["svc_{$n}_more"] = pw_f('text', "Service {$n}: link text", isset($svc_pages[$n]) ? $svc_pages[$n][1] : 'Learn more');
     }
     $services['services_cta_text'] = pw_f('text', 'Text under the services', 'Not sure where to start? Tell us what you want to achieve and we will map out the right services for it.');
     $services['services_cta_btn'] = pw_f('text', 'Button text', 'Get a quote');
@@ -282,6 +286,8 @@ function pw_fields()
             'training_points' => pw_f('textarea', 'Points (one per line)', "Write content, emails and proposals in minutes\nAutomate repetitive admin and win back hours every week\nCreate images, video and marketing material with AI\nUse AI safely and keep your business data protected\nTraining for individuals, teams and whole companies"),
             'training_btn_text' => pw_f('text', 'Button text', 'Book AI training'),
             'training_btn_link' => pw_f('text', 'Button link', '#contact'),
+            'training_page' => pw_f('select', 'Second button: service page', 'ai', array('choices' => pw_service_choices())),
+            'training_more_text' => pw_f('text', 'Second button text', 'AI training in Pretoria'),
             'training_demo_title' => pw_f('text', 'Chat demo title', 'AI assistant'),
             'training_demo_prompt' => pw_f('textarea', 'Chat demo question', 'Write a short welcome message for new customers of my bakery in Pretoria.'),
             'training_demo_input' => pw_f('text', 'Chat demo input placeholder', 'Ask anything'),
@@ -382,11 +388,14 @@ function pw_fields()
         'fields' => array(
             'footer_big' => pw_f('text', 'Giant footer words', 'Dream Catchers'),
             'footer_text' => pw_f('textarea', 'Footer text', 'Web design, web development, software, mobile apps, digital marketing, hosting and cyber security by AI engineers in Pretoria, South Africa.'),
+            'footer_services_title' => pw_f('text', 'Services list heading (empty hides the list)', 'Services'),
+            'footer_home_service' => pw_f('text', 'Services list: home page link text', 'Web design Pretoria'),
             'footer_copyright' => pw_f('text', 'Copyright line ({year} becomes the current year)', '© {year} Passive Web (Pty) Ltd. All rights reserved.'),
             'footer_top_text' => pw_f('text', 'Back to top text', 'Back to top'),
         ),
     );
 
+    $fields = array_merge($fields, pw_service_page_sections());
     return $fields;
 }
 

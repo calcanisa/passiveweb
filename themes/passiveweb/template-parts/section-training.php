@@ -5,6 +5,7 @@ if (!defined('ABSPATH')) {
 $pw_points = pw_lines('training_points');
 $pw_prompt = pw_text('training_demo_prompt');
 $pw_reply = pw_text('training_demo_reply');
+$pw_more_url = pw_service_url((string) pw_mod('training_page'));
 ?>
 <section class="pw-section pw-section--dark pw-training" id="training">
     <div class="pw-container pw-training__grid">
@@ -23,6 +24,9 @@ $pw_reply = pw_text('training_demo_reply');
             <?php endif; ?>
             <div class="pw-training__actions" data-reveal>
                 <?php pw_button('training_btn_text', 'training_btn_link', 'primary'); ?>
+                <?php if ('' !== $pw_more_url && '' !== pw_text('training_more_text')) : ?>
+                    <a class="pw-btn pw-btn--ghost" href="<?php echo esc_url($pw_more_url); ?>"<?php echo pw_on('fx_magnetic') ? ' data-magnetic' : ''; ?>><span class="pw-btn__label"><?php pw_e('training_more_text'); ?></span><span class="pw-btn__icon" aria-hidden="true"><?php echo pw_icon('arrow'); ?></span></a>
+                <?php endif; ?>
             </div>
         </div>
         <?php if ('' !== $pw_prompt || '' !== $pw_reply) : ?>
