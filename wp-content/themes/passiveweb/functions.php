@@ -14,3 +14,4 @@ require PW_DIR . '/inc/icons.php';
 require PW_DIR . '/inc/customizer.php';
 require PW_DIR . '/inc/setup.php';
 require PW_DIR . '/inc/integration.php';
+require PW_DIR . '/inc/projects.php';

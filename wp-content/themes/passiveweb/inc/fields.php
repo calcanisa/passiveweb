@@ -66,7 +66,7 @@ function pw_font_choices()
 
 function pw_section_ids()
 {
-    return array('about', 'services', 'ai', 'included', 'training', 'quote', 'process', 'faq', 'contact');
+    return array('about', 'services', 'work', 'ai', 'included', 'training', 'quote', 'process', 'faq', 'contact');
 }
 
 function pw_fields()
@@ -85,7 +85,7 @@ function pw_fields()
         'title' => 'Layout and Sections',
         'description' => 'Turn sections on or off in each section panel. Change the order here.',
         'fields' => array(
-            'section_order' => pw_f('text', 'Section order', implode(',', pw_section_ids()), array('description' => 'Comma separated, the hero always comes first. Available: about, services, ai, included, training, quote, process, faq, contact')),
+            'section_order' => pw_f('text', 'Section order', implode(',', pw_section_ids()), array('description' => 'Comma separated, the hero always comes first. Available: about, services, work, ai, included, training, quote, process, faq, contact')),
             'marquee_enable' => pw_f('checkbox', 'Show the moving services ribbon under the hero', true),
             'marquee_items' => pw_f('textarea', 'Ribbon items (one per line)', "Web Design Pretoria\nWeb Development\nSoftware Development\nMobile Applications\nDigital Marketing\nHosting and Maintenance\nCyber Security\nAI Training"),
         ),
@@ -221,6 +221,20 @@ function pw_fields()
     $services['services_cta_btn'] = pw_f('text', 'Button text', 'Get a quote');
     $services['services_cta_link'] = pw_f('text', 'Button link', '#contact');
     $fields['pw_services'] = array('title' => 'Section: Services', 'fields' => $services);
+
+    $fields['pw_work'] = array(
+        'title' => 'Section: Our work',
+        'description' => 'Add projects under Projects in the admin menu. This section and its menu link only show once at least one project is published.',
+        'fields' => array(
+            'work_enable' => pw_f('checkbox', 'Show this section', true),
+            'work_nav' => pw_f('text', 'Menu label (empty hides it from the menu)', 'Our work'),
+            'work_eyebrow' => pw_f('text', 'Small label', 'Our work'),
+            'work_title' => pw_f('text', 'Heading', 'Websites and apps we have built'),
+            'work_text' => pw_f('textarea', 'Paragraph', 'A few of the websites, apps and platforms we have designed, built and launched for businesses in Pretoria and beyond.'),
+            'work_limit' => pw_f('number', 'Number of projects to show', 6, array('min' => 1, 'max' => 24)),
+            'work_visit_text' => pw_f('text', 'Link text on each project', 'Visit the website'),
+        ),
+    );
 
     $ai = array(
         'ai_enable' => pw_f('checkbox', 'Show this section', true),

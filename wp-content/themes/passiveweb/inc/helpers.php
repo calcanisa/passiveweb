@@ -85,14 +85,34 @@ function pw_section_order()
         }
     }
     if (empty($order)) {
-        $order = $allowed;
+        return $allowed;
+    }
+    foreach ($allowed as $index => $id) {
+        if (in_array($id, $order, true)) {
+            continue;
+        }
+        $position = 0;
+        for ($back = $index - 1; $back >= 0; $back--) {
+            $found = array_search($allowed[$back], $order, true);
+            if (false !== $found) {
+                $position = $found + 1;
+                break;
+            }
+        }
+        array_splice($order, $position, 0, array($id));
     }
     return $order;
 }
 
 function pw_section_enabled($id)
 {
-    return pw_on($id . '_enable');
+    if (!pw_on($id . '_enable')) {
+        return false;
+    }
+    if ('work' === $id) {
+        return pw_has_projects();
+    }
+    return true;
 }
 
 function pw_nav_items()
