@@ -124,3 +124,14 @@ remove_action('wp_head', 'wlwmanifest_link');
 remove_action('wp_head', 'rsd_link');
 remove_action('wp_head', 'wp_shortlink_wp_head');
 add_filter('the_generator', '__return_empty_string');
+
+function pw_fallback_icons()
+{
+    if (has_site_icon()) {
+        return;
+    }
+    echo '<link rel="icon" href="' . esc_url(PW_URI . '/assets/img/favicon.ico') . '" sizes="any">' . "\n";
+    echo '<link rel="icon" href="' . esc_url(PW_URI . '/assets/img/favicon.svg') . '" type="image/svg+xml">' . "\n";
+    echo '<link rel="apple-touch-icon" href="' . esc_url(PW_URI . '/assets/img/apple-touch-icon.png') . '">' . "\n";
+}
+add_action('wp_head', 'pw_fallback_icons', 2);

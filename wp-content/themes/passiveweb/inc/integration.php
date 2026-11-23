@@ -118,3 +118,27 @@ add_filter('pwc_business_contact', function ($contact) {
     }
     return $contact;
 });
+
+add_filter('pwc_default_image', function ($image) {
+    if ('' !== $image) {
+        return $image;
+    }
+    return PW_URI . '/assets/img/og-default.png';
+});
+
+add_filter('pwc_indexable_empty_pages', function ($ids) {
+    foreach (pw_service_keys() as $key) {
+        $id = pw_service_page_id($key);
+        if ($id) {
+            $ids[] = $id;
+        }
+    }
+    return $ids;
+});
+
+add_filter('pwc_default_logo', function ($logo) {
+    if ('' !== $logo) {
+        return $logo;
+    }
+    return PW_URI . '/assets/img/logo-560.png';
+});

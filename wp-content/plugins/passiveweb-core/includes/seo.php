@@ -90,12 +90,24 @@ function pwc_logo_url()
         }
     }
     $icon = get_site_icon_url(512);
-    return $icon ? $icon : '';
+    if ($icon) {
+        return $icon;
+    }
+    return esc_url_raw((string) apply_filters('pwc_default_logo', ''));
+}
+
+function pwc_share_image()
+{
+    $image = esc_url_raw(pwc_opt('seo_image'));
+    if ('' === $image) {
+        $image = esc_url_raw((string) apply_filters('pwc_default_image', ''));
+    }
+    return $image;
 }
 
 function pwc_meta_tags($title, $desc, $url)
 {
-    $image = esc_url(pwc_opt('seo_image'));
+    $image = esc_url(pwc_share_image());
     $name = pwc_text('biz_name');
 
     if ('' !== $desc) {
@@ -218,7 +230,7 @@ function pwc_business_node()
         $business['logo'] = $logo;
         $business['image'] = $logo;
     }
-    $og = esc_url_raw(pwc_opt('seo_image'));
+    $og = pwc_share_image();
     if ('' !== $og) {
         $business['image'] = $og;
     }
@@ -476,3 +488,73 @@ function pwc_schema()
     }
 }
 add_action('wp_head', 'pwc_schema', 30);
+
+function pwc_indexable_empty_ids()
+{
+    $ids = array_map('intval', (array) apply_filters('pwc_indexable_empty_pages', array()));
+    $front = (int) get_option('page_on_front');
+    if ($front) {
+        $ids[] = $front;
+    }
+    return array_values(array_unique(array_filter($ids)));
+}
+
+function pwc_empty_page_ids()
+{
+    static $ids = null;
+    if (null !== $ids) {
+        return $ids;
+    }
+    global $wpdb;
+    $rows = $wpdb->get_col("SELECT ID FROM {$wpdb->posts} WHERE post_type = 'page' AND post_status = 'publish' AND TRIM(post_content) = ''");
+    $ids = array_values(array_diff(array_map('intval', $rows), pwc_indexable_empty_ids()));
+    return $ids;
+}
+
+function pwc_robots($robots)
+{
+    if (!pwc_opt('seo_enable')) {
+        return $robots;
+    }
+    $noindex = is_search() || is_404() || is_attachment() || is_author() || is_date();
+    if (!$noindex && is_page() && in_array((int) get_queried_object_id(), pwc_empty_page_ids(), true)) {
+        $noindex = true;
+    }
+    if ($noindex) {
+        $robots['noindex'] = true;
+        $robots['follow'] = true;
+        unset($robots['max-image-preview']);
+    }
+    return $robots;
+}
+add_filter('wp_robots', 'pwc_robots', 20);
+
+function pwc_sitemap_providers($provider, $name)
+{
+    if ('users' === $name && pwc_opt('seo_enable')) {
+        return false;
+    }
+    return $provider;
+}
+add_filter('wp_sitemaps_add_provider', 'pwc_sitemap_providers', 10, 2);
+
+function pwc_sitemap_posts_args($args, $post_type)
+{
+    if ('page' !== $post_type || !pwc_opt('seo_enable')) {
+        return $args;
+    }
+    $exclude = pwc_empty_page_ids();
+    if (!empty($exclude)) {
+        $current = isset($args['post__not_in']) ? (array) $args['post__not_in'] : array();
+        $args['post__not_in'] = array_values(array_unique(array_merge($current, $exclude)));
+    }
+    return $args;
+}
+add_filter('wp_sitemaps_posts_query_args', 'pwc_sitemap_posts_args', 10, 2);
+
+function pwc_sitemap_post_types($post_types)
+{
+    unset($post_types['attachment']);
+    return $post_types;
+}
+add_filter('wp_sitemaps_post_types', 'pwc_sitemap_post_types');
