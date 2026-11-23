@@ -31,7 +31,7 @@ $pw_services = '' !== pw_text('footer_services_title') ? pw_service_links() : ar
                 <nav class="pw-footer__nav" aria-label="Footer menu">
                     <ul>
                         <?php foreach ($pw_nav as $pw_item) : ?>
-                            <li><a href="<?php echo esc_url(pw_link('#' . $pw_item['id'])); ?>"><?php echo esc_html($pw_item['label']); ?></a></li>
+                            <li><a href="<?php echo esc_url($pw_item['url']); ?>"><?php echo esc_html($pw_item['label']); ?></a></li>
                         <?php endforeach; ?>
                     </ul>
                 </nav>

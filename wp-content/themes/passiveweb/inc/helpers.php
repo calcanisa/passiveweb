@@ -97,15 +97,42 @@ function pw_section_enabled($id)
 
 function pw_nav_items()
 {
+    $pages = array('training' => 'ai');
     $items = array();
     foreach (pw_section_order() as $id) {
         if (!pw_section_enabled($id)) {
             continue;
         }
         $label = pw_text($id . '_nav');
-        if ('' !== $label) {
-            $items[] = array('id' => $id, 'label' => $label);
+        if ('' === $label) {
+            continue;
         }
+        $url = pw_link('#' . $id);
+        $page_url = isset($pages[$id]) ? pw_service_url($pages[$id]) : '';
+        if ('' !== $page_url) {
+            $url = $page_url;
+        }
+        $children = array();
+        if ('services' === $id) {
+            $current = pw_current_service();
+            if ('' !== pw_text('footer_home_service')) {
+                $children[] = array('label' => pw_text('footer_home_service'), 'url' => home_url('/'), 'current' => is_front_page());
+            }
+            foreach (pw_service_links() as $link) {
+                $children[] = array('label' => $link['label'], 'url' => $link['url'], 'current' => $link['key'] === $current);
+            }
+            if (count($children) < 2) {
+                $children = array();
+            }
+        }
+        $items[] = array(
+            'id' => $id,
+            'label' => $label,
+            'url' => $url,
+            'is_page' => '' !== $page_url,
+            'current' => '' !== $page_url && isset($pages[$id]) && pw_current_service() === $pages[$id],
+            'children' => $children,
+        );
     }
     return $items;
 }

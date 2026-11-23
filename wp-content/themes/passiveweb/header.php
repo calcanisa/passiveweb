@@ -47,7 +47,19 @@ $pw_cta = pw_text('header_cta_text');
             <?php if (!empty($pw_nav)) : ?>
                 <ul class="pw-nav__list">
                     <?php foreach ($pw_nav as $pw_item) : ?>
-                        <li><a class="pw-nav__link" href="<?php echo esc_url(pw_link('#' . $pw_item['id'])); ?>" data-nav-link="<?php echo esc_attr($pw_item['id']); ?>"><?php echo esc_html($pw_item['label']); ?></a></li>
+                        <?php if (!empty($pw_item['children'])) : ?>
+                            <li class="pw-nav__item pw-nav__item--sub" data-subnav>
+                                <a class="pw-nav__link" href="<?php echo esc_url($pw_item['url']); ?>" data-nav-link="<?php echo esc_attr($pw_item['id']); ?>"><?php echo esc_html($pw_item['label']); ?></a>
+                                <button class="pw-nav__toggle" type="button" aria-expanded="false" aria-controls="pw-sub-<?php echo esc_attr($pw_item['id']); ?>" aria-label="<?php echo esc_attr('Show ' . $pw_item['label']); ?>" data-subnav-toggle><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><polyline points="6 9 12 15 18 9"/></svg></button>
+                                <ul class="pw-nav__sub" id="pw-sub-<?php echo esc_attr($pw_item['id']); ?>">
+                                    <?php foreach ($pw_item['children'] as $pw_child) : ?>
+                                        <li><a class="pw-nav__sublink" href="<?php echo esc_url($pw_child['url']); ?>"<?php echo $pw_child['current'] ? ' aria-current="page"' : ''; ?>><?php echo esc_html($pw_child['label']); ?></a></li>
+                                    <?php endforeach; ?>
+                                </ul>
+                            </li>
+                        <?php else : ?>
+                            <li class="pw-nav__item"><a class="pw-nav__link" href="<?php echo esc_url($pw_item['url']); ?>"<?php echo $pw_item['is_page'] ? '' : ' data-nav-link="' . esc_attr($pw_item['id']) . '"'; ?><?php echo $pw_item['current'] ? ' aria-current="page"' : ''; ?>><?php echo esc_html($pw_item['label']); ?></a></li>
+                        <?php endif; ?>
                     <?php endforeach; ?>
                 </ul>
             <?php endif; ?>
