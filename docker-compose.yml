@@ -1,0 +1,100 @@
+name: passiveweb
+
+services:
+  db:
+    image: ${DB_IMAGE:-mariadb:11.8}
+    restart: unless-stopped
+    environment:
+      MARIADB_DATABASE: ${DB_NAME:-passiveweb}
+      MARIADB_USER: ${DB_USER:-passiveweb}
+      MARIADB_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD in .env}
+      MARIADB_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:?Set DB_ROOT_PASSWORD in .env}
+    volumes:
+      - db_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+
+  wordpress:
+    image: ${WP_IMAGE:-wordpress:7.1-php8.3-apache}
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:${WP_PORT:-8080}:80"
+    environment:
+      WORDPRESS_DB_HOST: db
+      WORDPRESS_DB_NAME: ${DB_NAME:-passiveweb}
+      WORDPRESS_DB_USER: ${DB_USER:-passiveweb}
+      WORDPRESS_DB_PASSWORD: ${DB_PASSWORD}
+      WORDPRESS_TABLE_PREFIX: wp_
+      WORDPRESS_DEBUG: ${WP_DEBUG:-1}
+      WORDPRESS_CONFIG_EXTRA: |
+        define('WP_ENVIRONMENT_TYPE', 'local');
+        define('WP_DEBUG_DISPLAY', false);
+        define('WP_DEBUG_LOG', '/var/www/html/wp-content/debug.log');
+      APACHE_RUN_USER: "#${HOST_UID:-1000}"
+      APACHE_RUN_GROUP: "#${HOST_GID:-1000}"
+    volumes:
+      - wp_core:/var/www/html
+      - ./wp-content:/var/www/html/wp-content
+
+  setup:
+    image: ${CLI_IMAGE:-wordpress:cli-php8.3}
+    restart: "no"
+    depends_on:
+      db:
+        condition: service_healthy
+      wordpress:
+        condition: service_started
+    user: "${HOST_UID:-1000}:${HOST_GID:-1000}"
+    environment:
+      HOME: /tmp
+      WORDPRESS_DB_HOST: db
+      WORDPRESS_DB_NAME: ${DB_NAME:-passiveweb}
+      WORDPRESS_DB_USER: ${DB_USER:-passiveweb}
+      WORDPRESS_DB_PASSWORD: ${DB_PASSWORD}
+      WORDPRESS_TABLE_PREFIX: wp_
+      SITE_URL: ${SITE_URL:-http://localhost:8080}
+      SEED_URL: http://localhost:10014
+      ADMIN_USER: ${ADMIN_USER:?Set ADMIN_USER in .env}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:?Set ADMIN_EMAIL in .env}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:?Set ADMIN_PASSWORD in .env}
+    volumes:
+      - wp_core:/var/www/html
+      - ./wp-content:/var/www/html/wp-content
+      - ./db/seed.sql:/seed/seed.sql:ro
+      - ./docker/setup.sh:/setup.sh:ro
+    entrypoint: ["sh", "/setup.sh"]
+
+  seed-export:
+    image: ${CLI_IMAGE:-wordpress:cli-php8.3}
+    profiles: ["tools"]
+    restart: "no"
+    depends_on:
+      db:
+        condition: service_healthy
+    user: "${HOST_UID:-1000}:${HOST_GID:-1000}"
+    environment:
+      HOME: /tmp
+      WORDPRESS_DB_HOST: db
+      WORDPRESS_DB_NAME: ${DB_NAME:-passiveweb}
+      WORDPRESS_DB_USER: ${DB_USER:-passiveweb}
+      WORDPRESS_DB_PASSWORD: ${DB_PASSWORD}
+      WORDPRESS_TABLE_PREFIX: wp_
+      DB_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+      SITE_URL: ${SITE_URL:-http://localhost:8080}
+      SEED_URL: http://localhost:10014
+    volumes:
+      - wp_core:/var/www/html
+      - ./wp-content:/var/www/html/wp-content
+      - ./db:/seed-out
+      - ./docker/export-seed.sh:/export-seed.sh:ro
+    entrypoint: ["sh", "/export-seed.sh"]
+
+volumes:
+  db_data:
+  wp_core:
